@@ -166,12 +166,21 @@ async fn get_video_info(app: AppHandle, url: String) -> Result<serde_json::Value
 
 #[tauri::command]
 async fn open_folder(path: String) -> Result<(), String> {
+    println!("Opening folder for path: {}", path);
     #[cfg(target_os = "windows")]
     {
-        std::process::Command::new("explorer")
-            .args(["/select,", &path]) // The comma is required, e.g. explorer /select,"C:\foo.txt"
+        // Normalize path to use backslashes for Windows
+        let normalized_path = path.replace("/", "\\");
+        
+        // Using explorer.exe /select, "path"
+        // Separating them often works better with std::process::Command quoting
+        let _ = std::process::Command::new("explorer")
+            .arg("/select,")
+            .arg(normalized_path)
             .spawn()
             .map_err(|e| e.to_string())?;
+        
+        Ok(())
     }
     #[cfg(target_os = "macos")]
     {
@@ -179,6 +188,7 @@ async fn open_folder(path: String) -> Result<(), String> {
             .args(["-R", &path])
             .spawn()
             .map_err(|e| e.to_string())?;
+        Ok(())
     }
     #[cfg(target_os = "linux")]
     {
@@ -187,8 +197,8 @@ async fn open_folder(path: String) -> Result<(), String> {
             .arg(parent)
             .spawn()
             .map_err(|e| e.to_string())?;
+        Ok(())
     }
-    Ok(())
 }
 
 #[tauri::command]

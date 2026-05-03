@@ -724,7 +724,7 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
   }
 
-  window.deleteHistoryItem = async function (id, path) {
+  async function deleteHistoryItem(id, path) {
     if (!confirm("Hapus item ini dari histori?")) return;
     const physicalDelete = confirm("Apakah Anda juga ingin menghapus file fisiknya dari disk?");
 
@@ -741,15 +741,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     renderHistory();
-  };
+  }
 
-  window.openHistoryFolder = async function (path) {
+  async function openHistoryFolder(path) {
     try {
       await invoke("open_folder", { path });
     } catch (e) {
       showToast("error", "Error", "Tidak dapat membuka folder.");
     }
-  };
+  }
 
   function renderHistory() {
     const list = document.getElementById("history-list");
@@ -793,15 +793,33 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </div>
         <div class="history-actions">
-          <button class="btn-history-action" title="Open Folder" onclick="openHistoryFolder('${item.path.replace(/\\/g, '\\\\')}')">
+          <button class="btn-history-action action-open" title="Open Folder" data-path="${item.path}">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
           </button>
-          <button class="btn-history-action delete" title="Delete" onclick="deleteHistoryItem('${item.id}', '${item.path.replace(/\\/g, '\\\\')}')">
+          <button class="btn-history-action delete action-delete" title="Delete" data-id="${item.id}" data-path="${item.path}">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
           </button>
         </div>
       </div>
-    `).join("");
+    `).join('');
+  }
+
+  // Event delegation for history actions
+  const historyList = document.getElementById("history-list");
+  if (historyList) {
+    historyList.addEventListener("click", (e) => {
+      const openBtn = e.target.closest(".action-open");
+      const deleteBtn = e.target.closest(".action-delete");
+
+      if (openBtn) {
+        const path = openBtn.dataset.path;
+        openHistoryFolder(path);
+      } else if (deleteBtn) {
+        const id = deleteBtn.dataset.id;
+        const path = deleteBtn.dataset.path;
+        deleteHistoryItem(id, path);
+      }
+    });
   }
 
   // ─── Toast Notification ──────────────────────
