@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KenVano</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="/main.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <!-- Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <div class="logo">
+            <svg width="34" height="34" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="500" height="500" rx="110" fill="url(#bgblue)"/>
+              <defs>
+                <linearGradient id="bgblue" x1="0" y1="0" x2="500" y2="500" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#3b52d6"/>
+                  <stop offset="100%" stop-color="#2a3cc4"/>
+                </linearGradient>
+              </defs>
+              <path
+                d="M52 130 C52 130 145 310 250 310 C355 310 448 130 448 130"
+                fill="none"
+                stroke="rgba(255,255,255,0.22)"
+                stroke-width="52"
+                stroke-linecap="round"
+              />
+              <path
+                d="M118 158 C118 158 182 308 250 308 C318 308 382 158 382 158"
+                fill="none"
+                stroke="rgba(255,255,255,0.48)"
+                stroke-width="48"
+                stroke-linecap="round"
+              />
+              <path
+                d="M178 198 C178 198 210 300 250 300 C290 300 322 198 322 198"
+                fill="none"
+                stroke="rgba(255,255,255,0.90)"
+                stroke-width="44"
+                stroke-linecap="round"
+              />
+              <circle cx="250" cy="375" r="30" fill="white"/>
+            </svg>
+          </div>
+          <div class="header-title">
+            <h1>KenVano</h1>
+            <span class="header-subtitle">Premium Downloader</span>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="lang-toggle" id="lang-toggle" title="Switch Language">ID</button>
+          <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+            <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Content (Scrollable) -->
+      <!-- Main Content Area -->
+      <main class="app-content">
+        <!-- Home View -->
+        <div id="view-home" class="view-page active">
+          <div class="scroll-container">
+            <!-- URL Input Section -->
+            <section class="url-section">
+              <div class="section-label">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+                <span data-i18n="url_label">Paste video URL</span>
+              </div>
+              <div class="url-input-wrapper">
+                <input type="text" id="url-input" class="url-input" placeholder="https://youtube.com/watch?v=..." autocomplete="off" spellcheck="false" />
+                <button class="url-clear" id="url-clear" title="Clear">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              <p class="url-hint" data-i18n="url_hint">Supports YouTube, TikTok, Instagram, Twitter & more</p>
+            </section>
+
+            <!-- Download Location Section -->
+            <section class="location-section">
+              <div class="section-label">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span data-i18n="save_label">Save to</span>
+              </div>
+              <div class="location-wrapper">
+                <input type="text" id="location-input" class="location-input" readonly placeholder="Choose folder..." />
+                <button class="btn-browse" id="btn-browse" title="Browse">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <span data-i18n="btn_browse">Browse</span>
+                </button>
+              </div>
+            </section>
+
+            <!-- Video Info Section -->
+            <section class="video-info hidden" id="video-info">
+              <div class="video-card">
+                <div class="video-details">
+                  <h3 id="video-title">Video Title</h3>
+                  <div class="video-meta">
+                    <span id="video-duration">00:00</span>
+                    <span class="dot">·</span>
+                    <span id="video-source">YouTube</span>
+                  </div>
+                </div>
+                <div class="source-logo" id="source-logo"></div>
+              </div>
+            </section>
+
+            <!-- Format Tabs -->
+            <section class="format-section hidden" id="format-section">
+              <div class="tabs">
+                <button class="tab active" data-tab="video" id="tab-video">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                  </svg>
+                  <span data-i18n="tab_video">Video</span>
+                </button>
+                <button class="tab" data-tab="audio" id="tab-audio">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                  </svg>
+                  <span data-i18n="tab_audio">Audio</span>
+                </button>
+              </div>
+
+              <!-- Video Options -->
+              <div class="tab-content active" id="panel-video">
+                <div class="quality-grid" id="quality-grid">
+                  <label class="quality-option">
+                    <input type="radio" name="video-quality" value="1080" />
+                    <div class="quality-card">
+                      <span class="quality-value">1080p</span>
+                      <span class="quality-label">FHD</span>
+                      <span class="quality-size" id="size-1080"></span>
+                    </div>
+                  </label>
+                  <label class="quality-option">
+                    <input type="radio" name="video-quality" value="720" checked />
+                    <div class="quality-card">
+                      <span class="quality-value">720p</span>
+                      <span class="quality-label">HD</span>
+                      <span class="quality-size" id="size-720"></span>
+                    </div>
+                  </label>
+                  <label class="quality-option">
+                    <input type="radio" name="video-quality" value="480" />
+                    <div class="quality-card">
+                      <span class="quality-value">480p</span>
+                      <span class="quality-label">Medium</span>
+                      <span class="quality-size" id="size-480"></span>
+                    </div>
+                  </label>
+                  <label class="quality-option">
+                    <input type="radio" name="video-quality" value="360" />
+                    <div class="quality-card">
+                      <span class="quality-value">360p</span>
+                      <span class="quality-label">Low</span>
+                      <span class="quality-size" id="size-360"></span>
+                    </div>
+                  </label>
+                </div>
+                <div class="original-quality hidden" id="original-quality-container">
+                  <label class="quality-option single-option">
+                    <input type="radio" name="video-quality" value="best" id="opt-original" />
+                    <div class="quality-card original-card">
+                      <div class="quality-info">
+                        <span class="quality-value" data-i18n="opt_original">Original Quality</span>
+                        <span class="quality-label" data-i18n="opt_original_desc">Terbaik dari sumber</span>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+                <div class="format-info" data-i18n="out_mp4">Output: MP4 format</div>
+              </div>
+
+              <!-- Audio Options -->
+              <div class="tab-content" id="panel-audio">
+                <div class="quality-grid">
+                  <label class="quality-option"><input type="radio" name="audio-quality" value="64" /><div class="quality-card"><span class="quality-value">64</span><span class="quality-label">kbps</span><span class="quality-size" id="size-64"></span></div></label>
+                  <label class="quality-option"><input type="radio" name="audio-quality" value="128" checked /><div class="quality-card"><span class="quality-value">128</span><span class="quality-label">kbps</span><span class="quality-size" id="size-128"></span></div></label>
+                  <label class="quality-option"><input type="radio" name="audio-quality" value="192" /><div class="quality-card"><span class="quality-value">192</span><span class="quality-label">kbps</span><span class="quality-size" id="size-192"></span></div></label>
+                </div>
+                <div class="format-info" data-i18n="out_mp3">Output: MP3 format</div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="action-buttons">
+                <button class="btn btn-cancel" id="btn-cancel" data-i18n="btn_cancel">Cancel</button>
+                <button class="btn btn-download" id="btn-download" data-i18n="btn_download">Download</button>
+              </div>
+            </section>
+
+            <!-- Progress Section -->
+            <section class="progress-section hidden" id="progress-section">
+              <div class="progress-card">
+                <div class="progress-header">
+                  <span class="progress-title" id="progress-title">Downloading...</span>
+                  <span class="progress-percent" id="progress-percent">0%</span>
+                </div>
+                <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+                <div class="progress-detail" id="progress-detail">Initializing...</div>
+                <div class="progress-footer hidden" id="progress-footer">
+                  <button class="btn-reload" id="btn-reload" data-i18n="btn_reload">Reload / Try Again</button>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <!-- History View -->
+        <div id="view-history" class="view-page">
+          <div class="view-header">
+            <h2 data-i18n="history_title">Download History</h2>
+          </div>
+          <div class="scroll-container" id="history-list" style="padding-top: 0; display: none;">
+            <!-- Dynamic History Items -->
+          </div>
+          <div class="empty-state" id="history-empty">
+            <div class="empty-icon">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <p data-i18n="history_empty">Belum ada riwayat download</p>
+          </div>
+        </div>
+
+        <!-- Help View -->
+        <div id="view-help" class="view-page">
+          <div class="view-header">
+            <h2 data-i18n="help_title">Help & Support</h2>
+          </div>
+          <div class="help-content scroll-container" style="padding-top: 0;">
+            <div class="help-item">
+              <h4 data-i18n="help_how_title">Cara Mengunduh</h4>
+              <p data-i18n="help_how_desc">Salin URL video dari browser atau aplikasi, lalu tempelkan pada kotak input di halaman Home.</p>
+            </div>
+            <div class="help-item">
+              <h4 data-i18n="help_format_title">Format & Kualitas</h4>
+              <p data-i18n="help_format_desc">Pilih tab Video untuk MP4 atau tab Audio untuk MP3. Kualitas yang tersedia tergantung pada sumber video asli.</p>
+            </div>
+            <div class="help-item">
+              <h4 data-i18n="help_update_title">Update Engine</h4>
+              <p data-i18n="help_update_desc">Perbarui mesin downloader (yt-dlp) untuk mendukung perubahan algoritma YouTube terbaru.</p>
+              <button class="btn btn-download" id="btn-update-engine" data-i18n="btn_update" style="margin-top: 10px; width: 100%; font-size: 0.8rem; padding: 10px;">Check for Updates</button>
+            </div>
+            <div class="help-item">
+              <h4 data-i18n="help_about_title">Tentang KenVano</h4>
+              <p data-i18n="help_about_desc">KenVano Premium Downloader v1.0.0<br>Developed by <strong>CandraSP</strong></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notification Toast -->
+        <div class="toast hidden" id="toast">
+          <div class="toast-icon" id="toast-icon"></div>
+          <div class="toast-content">
+            <span class="toast-title" id="toast-title">Success!</span>
+            <span class="toast-message" id="toast-message">Download completed</span>
+          </div>
+        </div>
+      </main>
+
+      <!-- Bottom Navigation Bar -->
+      <nav class="nav-bar">
+        <button class="nav-item active" data-view="home">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span data-i18n="nav_home">Home</span>
+        </button>
+        <button class="nav-item" data-view="history">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span data-i18n="nav_history">History</span>
+        </button>
+        <button class="nav-item" data-view="help">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span data-i18n="nav_help">Help</span>
+        </button>
+      </nav>
+    </div>
+  </body>
+</html>
