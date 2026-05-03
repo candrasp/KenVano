@@ -1,7 +1,4 @@
 # KenVano Premium Downloader
-
-![KenVano Logo](kenvano-icon-500.png)
-
 ![KenVano Screenshot](screenshot.png)
 
 **KenVano** adalah aplikasi komputer yang dirancang khusus untuk membantu Anda mengunduh video dan musik favorit dari media sosial dengan cara yang paling mudah, cepat, dan elegan.
