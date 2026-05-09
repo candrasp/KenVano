@@ -24,6 +24,8 @@
       ]
     },
     "dialog:default",
-    "core:event:allow-listen"
+    "core:event:allow-listen",
+    "clipboard-manager:allow-read-text",
+    "clipboard-manager:allow-write-text"
   ]
 }

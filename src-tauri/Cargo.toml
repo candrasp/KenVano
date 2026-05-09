@@ -1,6 +1,6 @@
 [package]
 name = "tauri-app"
-version = "1.0.0"
+version = "1.1.0"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
@@ -26,5 +26,7 @@ tauri-plugin-shell = "2.3.5"
 tauri-plugin-dialog = "2"
 reqwest = { version = "0.13.3", features = ["json"] }
 base64 = "0.22.1"
+tokio = { version = "1", features = ["time"] }
+tauri-plugin-clipboard-manager = "2"
 
 

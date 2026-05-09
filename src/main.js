@@ -1,6 +1,74 @@
 const { invoke } = window.__TAURI__.core;
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Custom Context Menu Logic
+  const customCtx = document.getElementById("custom-context-menu");
+  let activeInput = null;
+
+  document.addEventListener("contextmenu", (e) => {
+    const isInput = e.target.closest("input") || e.target.closest("textarea") || e.target.isContentEditable;
+    
+    if (isInput) {
+      e.preventDefault();
+      activeInput = e.target.closest("input") || e.target.closest("textarea");
+      
+      const x = e.clientX;
+      const y = e.clientY;
+      
+      customCtx.style.left = `${x}px`;
+      customCtx.style.top = `${y}px`;
+      customCtx.classList.remove("hidden");
+    } else {
+      customCtx.classList.add("hidden");
+      e.preventDefault();
+    }
+  });
+
+  document.addEventListener("click", () => {
+    customCtx.classList.add("hidden");
+  });
+
+  document.getElementById("ctx-paste").addEventListener("click", async () => {
+    if (activeInput) {
+      try {
+        const text = await window.__TAURI__.clipboardManager.readText();
+        const start = activeInput.selectionStart;
+        const end = activeInput.selectionEnd;
+        activeInput.value = activeInput.value.substring(0, start) + text + activeInput.value.substring(end);
+        activeInput.dispatchEvent(new Event("input"));
+        activeInput.focus();
+        checkUrlStatus();
+      } catch (err) {
+        console.error("Failed to read clipboard:", err);
+      }
+    }
+  });
+
+  document.getElementById("ctx-copy").addEventListener("click", async () => {
+    if (activeInput) {
+      const text = activeInput.value.substring(activeInput.selectionStart, activeInput.selectionEnd) || activeInput.value;
+      await window.__TAURI__.clipboardManager.writeText(text);
+    }
+  });
+
+  document.getElementById("ctx-select-all").addEventListener("click", () => {
+    if (activeInput) {
+      activeInput.select();
+      activeInput.focus();
+    }
+  });
+
+  // Disable developer shortcuts (F12, Ctrl+Shift+I, etc.)
+  document.addEventListener("keydown", (e) => {
+    if (
+      e.key === "F12" ||
+      (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
+      (e.ctrlKey && e.key === "U")
+    ) {
+      e.preventDefault();
+    }
+  });
+
   // ─── Elements ────────────────────────────────
   const urlInput = document.getElementById("url-input");
   const urlClear = document.getElementById("url-clear");
@@ -28,11 +96,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const progressDetail = document.getElementById("progress-detail");
   const progressFooter = document.getElementById("progress-footer");
   const btnReload = document.getElementById("btn-reload");
+  const btnCancelProgress = document.getElementById("btn-cancel-progress");
   const progressSection = document.getElementById("progress-section");
   const toast = document.getElementById("toast");
   const toastIcon = document.getElementById("toast-icon");
   const toastTitle = document.getElementById("toast-title");
   const toastMessage = document.getElementById("toast-message");
+  const urlError = document.getElementById("url-error");
+  const urlWrapper = document.querySelector(".url-input-wrapper");
 
   const navItems = document.querySelectorAll(".nav-item");
   const viewPages = document.querySelectorAll(".view-page");
@@ -60,27 +131,42 @@ document.addEventListener("DOMContentLoaded", () => {
       tab_audio: "Audio",
       opt_original: "Kualitas Asli",
       opt_original_desc: "Terbaik dari sumber",
-      out_mp4: "Format Output: MP4",
-      out_mp3: "Format Output: MP3",
+      out_mp4: "Format: MP4",
+      out_mp3: "Format: MP3",
       btn_cancel: "Batal",
       btn_download: "Unduh",
-      btn_reload: "Muat Ulang / Coba Lagi",
+      btn_reload: "Muat Ulang",
       history_title: "Riwayat Unduhan",
       history_empty: "Belum ada riwayat unduhan",
       help_title: "Bantuan & Dukungan",
       help_how_title: "Cara Mengunduh",
-      help_how_desc: "Salin URL video dari browser atau aplikasi, lalu tempelkan pada kotak input di halaman Beranda.",
+      help_how_desc: "Salin URL video, tempel di kotak input, lalu tekan Unduh.",
       help_format_title: "Format & Kualitas",
-      help_format_desc: "Pilih tab Video untuk MP4 atau tab Audio untuk MP3. Kualitas yang tersedia tergantung pada sumber asli.",
-      help_update_title: "Pembaruan Mesin",
-      help_update_desc: "Perbarui mesin pengunduh untuk mendukung algoritma terbaru dari berbagai sumber.",
+      help_format_desc: "Pilih tab Video untuk MP4 atau tab Audio untuk MP3.",
+      help_update_title: "Update Engine",
+      help_update_desc: "Perbarui mesin downloader untuk mendukung algoritma terbaru.",
       btn_update: "Cek Pembaruan",
       help_about_title: "Tentang KenVano",
-      help_about_desc: "KenVano Premium Downloader v1.0.0<br>Dikembangkan oleh <strong>CandraSP</strong>",
+      help_about_desc: "KenVano Premium Downloader v1.1.0<br>Dikembangkan oleh <strong>CandraSP</strong>",
+      help_cookie_title: "Bypass Login (Cookie)",
+      help_cookie_desc: "Gunakan cookie browser untuk unduh video private.",
+      modal_cookie_title: "Gunakan Login Browser",
+      modal_cookie_desc1: "Pilih browser yang Anda gunakan untuk login di",
+      modal_cookie_desc2: "agar sistem bisa meminjam izin akses (cookie) dari sana untuk proses unduhan tanpa error.<br><br><strong>Catatan:</strong> Jika browser sedang terbuka, silakan tutup dan buka kembali agar data sinkron.",
       nav_home: "Beranda",
       nav_history: "Riwayat",
+      nav_settings: "Pengaturan",
       nav_help: "Bantuan",
-      converting: "Sedang Konversi..."
+      settings_lang: "Bahasa",
+      settings_theme: "Tema",
+      settings_relaunch_btn: "Restart Aplikasi",
+      settings_relaunch_hint: "Gunakan jika aplikasi terasa lambat atau loading terus menerus.",
+      ctx_paste: "Tempel",
+      ctx_copy: "Salin",
+      ctx_select_all: "Pilih Semua",
+      url_invalid: "URL tidak valid. Pastikan alamat dimulai dengan http:// atau https://",
+      url_unsupported: "Situs ini tidak didukung atau bukan penyedia video.",
+      converting: "Mengonversi..."
     },
     en: {
       url_label: "Paste video URL",
@@ -91,39 +177,163 @@ document.addEventListener("DOMContentLoaded", () => {
       tab_audio: "Audio",
       opt_original: "Original Quality",
       opt_original_desc: "Best from source",
-      out_mp4: "Output: MP4 format",
-      out_mp3: "Output: MP3 format",
+      out_mp4: "Format: MP4",
+      out_mp3: "Format: MP3",
       btn_cancel: "Cancel",
       btn_download: "Download",
-      btn_reload: "Reload / Try Again",
+      btn_reload: "Reload",
       history_title: "Download History",
       history_empty: "No download history yet",
       help_title: "Help & Support",
       help_how_title: "How to Download",
-      help_how_desc: "Copy a video URL from your browser or app, then paste it into the input box on the Home page.",
+      help_how_desc: "Copy video URL, paste into the input box, then press Download.",
       help_format_title: "Format & Quality",
-      help_format_desc: "Select the Video tab for MP4 or the Audio tab for MP3. Available qualities depend on the original source.",
+      help_format_desc: "Select Video tab for MP4 or Audio tab for MP3.",
       help_update_title: "Engine Update",
-      help_update_desc: "Update the downloader engine to support the latest source algorithm changes.",
+      help_update_desc: "Update the downloader engine to support the latest algorithms.",
       btn_update: "Check for Updates",
       help_about_title: "About KenVano",
-      help_about_desc: "KenVano Premium Downloader v1.0.0<br>Developed by <strong>CandraSP</strong>",
+      help_about_desc: "KenVano Premium Downloader v1.1.0<br>Developed by <strong>CandraSP</strong>",
+      help_cookie_title: "Bypass Login (Cookies)",
+      help_cookie_desc: "Use browser cookies to download private videos.",
+      modal_cookie_title: "Use Browser Login",
+      modal_cookie_desc1: "Select the browser you use to log in to",
+      modal_cookie_desc2: "so the system can use its access permission (cookies) for a smooth download without errors.<br><br><strong>Note:</strong> If the browser is currently open, please close and reopen it to sync data.",
       nav_home: "Home",
       nav_history: "History",
+      nav_settings: "Settings",
       nav_help: "Help",
+      settings_lang: "Language",
+      settings_theme: "Theme",
+      settings_relaunch_btn: "Restart Application",
+      settings_relaunch_hint: "Use if the app feels slow or keeps loading.",
+      ctx_paste: "Paste",
+      ctx_copy: "Copy",
+      ctx_select_all: "Select All",
+      url_invalid: "Invalid URL. Please make sure it starts with http:// or https://",
+      url_unsupported: "This site is not supported or is not a video provider.",
       converting: "Converting..."
     }
   };
 
   let currentLang = localStorage.getItem("kenvano-lang") || "id";
-  const langToggle = document.getElementById("lang-toggle");
+  const toggleLang = document.getElementById("toggle-lang");
+  const toggleTheme = document.getElementById("toggle-theme");
+  const toggleBrowser = document.getElementById("toggle-browser");
+
+  // ─── Settings Logic ─────────────────────────
+  let selectedBrowser = localStorage.getItem("kenvano-browser-cookie") || "";
+
+  function updateToggleGroup(groupId, value) {
+    const group = document.getElementById(groupId);
+    if (!group) return;
+    const buttons = group.querySelectorAll("button");
+    buttons.forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.value === value);
+    });
+  }
+
+  if (toggleBrowser) {
+    updateToggleGroup("toggle-browser", selectedBrowser);
+    toggleBrowser.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        selectedBrowser = btn.dataset.value;
+        localStorage.setItem("kenvano-browser-cookie", selectedBrowser);
+        updateToggleGroup("toggle-browser", selectedBrowser);
+      });
+    });
+  }
+
+  if (toggleLang) {
+    updateToggleGroup("toggle-lang", currentLang);
+    toggleLang.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        setLanguage(btn.dataset.value);
+      });
+    });
+  }
+
+  if (toggleTheme) {
+    const savedTheme = document.documentElement.getAttribute("data-theme") || "dark";
+    updateToggleGroup("toggle-theme", savedTheme);
+    toggleTheme.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const theme = btn.dataset.value;
+        document.documentElement.setAttribute("data-theme", theme);
+        localStorage.setItem("kenvano-theme", theme);
+        updateToggleGroup("toggle-theme", theme);
+      });
+    });
+  }
+
+  const btnRelaunch = document.getElementById("btn-relaunch");
+  if (btnRelaunch) {
+    btnRelaunch.addEventListener("click", async () => {
+      await invoke("relaunch_app");
+    });
+  }
+
+  // Theme init
+  const savedTheme = localStorage.getItem("kenvano-theme") || "dark";
+  document.documentElement.setAttribute("data-theme", savedTheme);
+  updateToggleGroup("toggle-theme", savedTheme);
+
+  // ─── Cookie Modal Logic ──────────────────────
+  const cookieModal = document.getElementById("cookie-modal");
+  const modalSiteName = document.getElementById("modal-site-name");
+  const btnCloseModal = document.getElementById("btn-close-modal");
+  const btnSkipCookie = document.getElementById("btn-skip-cookie");
+  const browserBtns = document.querySelectorAll(".browser-btn");
+
+  let modalCallback = null;
+
+  function showCookieModal(siteName, callback) {
+    if (modalSiteName) modalSiteName.textContent = siteName;
+    if (cookieModal) cookieModal.classList.remove("hidden");
+    modalCallback = callback;
+  }
+
+  function hideCookieModal() {
+    if (cookieModal) cookieModal.classList.add("hidden");
+    modalCallback = null;
+  }
+
+  if (btnCloseModal) btnCloseModal.addEventListener("click", hideCookieModal);
+  if (btnSkipCookie) {
+    btnSkipCookie.addEventListener("click", () => {
+      hideCookieModal();
+      if (modalCallback) modalCallback("");
+    });
+  }
+
+  browserBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const browser = btn.dataset.browser;
+      selectedBrowser = browser;
+      updateToggleGroup("toggle-browser", browser);
+      localStorage.setItem("kenvano-browser-cookie", browser);
+      hideCookieModal();
+      if (modalCallback) modalCallback(browser);
+    });
+  });
+
+  function getSiteName(url) {
+    try {
+      const hostname = new URL(url).hostname;
+      if (hostname.includes("youtube.com") || hostname.includes("youtu.be")) return "YouTube";
+      if (hostname.includes("tiktok.com")) return "TikTok";
+      if (hostname.includes("instagram.com")) return "Instagram";
+      if (hostname.includes("twitter.com") || hostname.includes("x.com")) return "Twitter/X";
+      if (hostname.includes("facebook.com")) return "Facebook";
+      return hostname.replace("www.", "");
+    } catch {
+      return "Situs ini";
+    }
+  }
 
   function setLanguage(lang) {
     currentLang = lang;
     localStorage.setItem("kenvano-lang", lang);
-    if (langToggle) {
-      langToggle.textContent = lang === "id" ? "EN" : "ID"; // Menampilkan opsi bahasa alternatif
-    }
 
     document.querySelectorAll("[data-i18n]").forEach(el => {
       const key = el.getAttribute("data-i18n");
@@ -131,12 +341,8 @@ document.addEventListener("DOMContentLoaded", () => {
         el.innerHTML = i18n[lang][key]; // innerHTML digunakan untuk mendukung tag <br> dan <strong>
       }
     });
-  }
 
-  if (langToggle) {
-    langToggle.addEventListener("click", () => {
-      setLanguage(currentLang === "id" ? "en" : "id");
-    });
+    updateToggleGroup("toggle-lang", lang);
   }
 
   // Init language
@@ -194,45 +400,85 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   if (window.__TAURI__) {
-    const { listen } = window.__TAURI__.event;
+    try {
+      const { listen } = window.__TAURI__.event;
 
-    listen("download-progress", (event) => {
-      const pct = event.payload;
-      if (isDownloading && !isConverting) {
-        progressFill.classList.remove("indeterminate");
-        progressFill.style.width = `${pct}%`;
-        progressPercent.textContent = `${Math.round(pct)}%`;
-      }
-    });
+      listen("download-progress", (event) => {
+        // payload could be a number or string depending on serde
+        const pct = parseFloat(event.payload);
+        if (isNaN(pct)) return;
 
-    listen("download-status", (event) => {
-      if (isDownloading && event.payload === "Converting...") {
-        isConverting = true;
-        progressTitle.textContent = i18n[currentLang].converting || event.payload;
-        
-        // Reset progress bar for conversion phase
-        progressFill.classList.remove("indeterminate");
-        let convPct = 0;
-        progressFill.style.width = "0%";
-        progressPercent.textContent = "0%";
+        console.log("[KenVano] Progress diterima:", pct + "%");
 
-        clearInterval(conversionInterval);
-        conversionInterval = setInterval(() => {
-          if (convPct < 99) {
-            // Heuristic: increment based on duration. 
-            // 3 hours (10800s) -> increment ~0.2% per sec (~8 mins total)
-            // 5 mins (300s) -> increment ~2% per sec (~50s total)
-            const durationFactor = Math.max(300, rawDurationSeconds);
-            const increment = 100 / (durationFactor / 15); 
-            convPct += Math.max(0.1, Math.min(2, increment));
-            
-            if (convPct > 99) convPct = 99;
-            progressFill.style.width = `${convPct}%`;
-            progressPercent.textContent = `${Math.round(convPct)}%`;
-          }
-        }, 1000);
-      }
-    });
+        // Force transition to Converting if we hit 100% and it's a format that needs conversion
+        if (pct >= 100 && !isConverting) {
+          isConverting = true;
+          progressTitle.textContent = currentTab === "video" ? "Converting to mp4..." : "Converting to mp3...";
+
+          const fill = document.getElementById("progress-fill");
+          const percent = document.getElementById("progress-percent");
+          if (fill) fill.classList.remove("indeterminate");
+
+          let convPct = 0;
+          if (fill) fill.style.width = "0%";
+          if (percent) percent.textContent = "0%";
+
+          clearInterval(conversionInterval);
+          conversionInterval = setInterval(() => {
+            if (convPct < 99) {
+              const durationFactor = Math.max(300, rawDurationSeconds);
+              const increment = 100 / (durationFactor / 15);
+              convPct += Math.max(0.1, Math.min(2, increment));
+
+              if (convPct > 99) convPct = 99;
+              if (fill) fill.style.width = `${convPct}%`;
+              if (percent) percent.textContent = `${Math.round(convPct)}%`;
+            }
+          }, 1000);
+          return; // Skip normal progress update
+        }
+
+        // Force update regardless of state flags just to debug
+        const fill = document.getElementById("progress-fill");
+        const percent = document.getElementById("progress-percent");
+
+        if (fill) {
+          fill.classList.remove("indeterminate");
+          fill.style.width = `${pct}%`;
+        }
+        if (percent) {
+          percent.textContent = `${Math.round(pct)}%`;
+        }
+      }).catch(e => console.error("Listen err:", e));
+
+      listen("download-status", (event) => {
+        if (isDownloading && event.payload === "Converting...") {
+          if (isConverting) return;
+          isConverting = true;
+          progressTitle.textContent = currentTab === "video" ? "converting to mp4..." : "converting to mp3...";
+
+          progressFill.classList.remove("indeterminate");
+          let convPct = 0;
+          progressFill.style.width = "0%";
+          progressPercent.textContent = "0%";
+
+          clearInterval(conversionInterval);
+          conversionInterval = setInterval(() => {
+            if (convPct < 99) {
+              const durationFactor = Math.max(300, rawDurationSeconds);
+              const increment = 100 / (durationFactor / 15);
+              convPct += Math.max(0.1, Math.min(2, increment));
+
+              if (convPct > 99) convPct = 99;
+              progressFill.style.width = `${convPct}%`;
+              progressPercent.textContent = `${Math.round(convPct)}%`;
+            }
+          }, 1000);
+        }
+      });
+    } catch (err) {
+      console.error("[KenVano] Gagal meregistrasi listener:", err);
+    }
   }
 
   // ─── Source Icons Logic ───────────────────────
@@ -262,17 +508,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
 
-  // ─── Theme Toggle ────────────────────────────
-  const savedTheme = localStorage.getItem("kenvano-theme") || "dark";
-  document.documentElement.setAttribute("data-theme", savedTheme);
-
-  themeToggle.addEventListener("click", () => {
-    const current = document.documentElement.getAttribute("data-theme");
-    const next = current === "dark" ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", next);
-    localStorage.setItem("kenvano-theme", next);
-  });
-
   // ─── Folder Picker ────────────────────────────
   btnBrowse.addEventListener("click", async () => {
     try {
@@ -296,11 +531,46 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ─── URL Input Logic ─────────────────────────
   function isValidUrl(str) {
+    if (!str) return false;
     try {
-      const url = new URL(str);
+      const url = new URL(str.trim());
       return url.protocol === "http:" || url.protocol === "https:";
     } catch {
       return false;
+    }
+  }
+
+  function isSupportedUrl(str) {
+    if (!str) return false;
+    const commonVideoPatterns = [
+      'youtube.com', 'youtu.be', 'tiktok.com', 'instagram.com', 
+      'facebook.com', 'fb.watch', 'x.com', 'twitter.com', 'pin.it',
+      'vimeo.com', 'dailymotion.com', 'twitch.tv', 'reddit.com', 
+      'pinterest.com', 'soundcloud.com', 'capcut.com', 'threads.net'
+    ];
+    const urlLower = str.toLowerCase();
+    return commonVideoPatterns.some(p => urlLower.includes(p));
+  }
+
+  function checkUrlStatus() {
+    const val = urlInput.value.trim();
+    if (!val) {
+      urlWrapper.classList.remove("error");
+      urlError.classList.add("hidden");
+      return;
+    }
+
+    if (!isValidUrl(val)) {
+      urlWrapper.classList.add("error");
+      urlError.textContent = i18n[currentLang].url_invalid;
+      urlError.classList.remove("hidden");
+    } else if (!isSupportedUrl(val)) {
+      urlWrapper.classList.add("error");
+      urlError.textContent = i18n[currentLang].url_unsupported;
+      urlError.classList.remove("hidden");
+    } else {
+      urlWrapper.classList.remove("error");
+      urlError.classList.add("hidden");
     }
   }
 
@@ -312,6 +582,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const val = urlInput.value.trim();
     const videoCard = document.querySelector(".video-card");
 
+    // Update visual error state
+    checkUrlStatus();
+
     // Show/hide clear button
     if (val.length > 0) {
       urlClear.classList.add("visible");
@@ -319,8 +592,8 @@ document.addEventListener("DOMContentLoaded", () => {
       urlClear.classList.remove("visible");
     }
 
-    // Hide everything if URL is invalid
-    if (!isValidUrl(val)) {
+    // Hide everything if URL is invalid or unsupported
+    if (!isValidUrl(val) || !isSupportedUrl(val)) {
       formatSection.classList.add("hidden");
       if (progressSection) progressSection.classList.add("hidden");
       videoInfo.classList.add("hidden");
@@ -352,7 +625,30 @@ document.addEventListener("DOMContentLoaded", () => {
       const v1080_init = document.querySelector('input[name="video-quality"][value="1080"]');
       if (v1080_init) { v1080_init.checked = true; v1080_init.parentElement.style.display = "block"; }
 
-      const info = await invoke("get_video_info", { url: val });
+      // Logic to show cookie modal if not set
+      if (!selectedBrowser) {
+        const siteName = getSiteName(val);
+        showCookieModal(siteName, (browser) => {
+          // If we are still on the same URL request, proceed
+          if (myId === currentFetchId) {
+            fetchVideoInfoInternal(val, browser, myId);
+          }
+        });
+        return;
+      }
+
+      fetchVideoInfoInternal(val, selectedBrowser, myId);
+    } catch (err) {
+      if (myId !== currentFetchId) return;
+      console.error("Fetch info outer error:", err);
+    }
+  }
+
+  async function fetchVideoInfoInternal(val, browser, myId) {
+    console.log("[KenVano] Mengambil info dengan browser cookie:", browser || "none");
+    const videoCard = document.querySelector(".video-card");
+    try {
+      const info = await invoke("get_video_info", { url: val, browser: browser });
 
       // Discard if a newer request has started
       if (myId !== currentFetchId) return;
@@ -378,7 +674,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // ── Quality logic ──────────────────────────────────────
       function formatBytes(bytes) {
         if (!bytes || bytes === 0) return '';
-        const k = 1024, sizes = ['B','KB','MB','GB'];
+        const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
       }
@@ -388,7 +684,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!vFormat) return '';
         let size = vFormat.filesize || vFormat.filesize_approx || 0;
         if (vFormat.acodec === 'none' && size > 0) {
-          const bestAudio = formats.filter(f => f.vcodec === 'none' && f.acodec !== 'none').sort((a,b)=>(b.abr||0)-(a.abr||0))[0];
+          const bestAudio = formats.filter(f => f.vcodec === 'none' && f.acodec !== 'none').sort((a, b) => (b.abr || 0) - (a.abr || 0))[0];
           if (bestAudio) size += (bestAudio.filesize || bestAudio.filesize_approx || 0);
         }
         return size > 0 ? formatBytes(size) : '';
@@ -397,7 +693,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!formats) return '';
         const af = formats.filter(f => f.vcodec === 'none' && f.acodec !== 'none');
         if (!af.length) return '';
-        const closest = af.sort((a,b)=>Math.abs((a.abr||0)-targetAbr)-Math.abs((b.abr||0)-targetAbr))[0];
+        const closest = af.sort((a, b) => Math.abs((a.abr || 0) - targetAbr) - Math.abs((b.abr || 0) - targetAbr))[0];
         const size = closest ? (closest.filesize || closest.filesize_approx || 0) : 0;
         return size > 0 ? formatBytes(size) : '';
       }
@@ -449,13 +745,13 @@ document.addEventListener("DOMContentLoaded", () => {
           if (v1080) {
             if (isYoutube) {
               v1080.parentElement.style.display = "block";
-              if (maxHeight < 1080) { v1080.disabled = true; const c = v1080.parentElement.querySelector('.quality-card'); if(c){c.style.opacity="0.4";c.style.pointerEvents="none";} }
+              if (maxHeight < 1080) { v1080.disabled = true; const c = v1080.parentElement.querySelector('.quality-card'); if (c) { c.style.opacity = "0.4"; c.style.pointerEvents = "none"; } }
             } else { v1080.parentElement.style.display = "none"; v1080.disabled = true; }
           }
-          if (maxHeight < 720) { v720.disabled = true; const c = v720.parentElement.querySelector('.quality-card'); if(c){c.style.opacity="0.4";c.style.pointerEvents="none";} }
-          if (maxHeight < 480) { v480.disabled = true; const c = v480.parentElement.querySelector('.quality-card'); if(c){c.style.opacity="0.4";c.style.pointerEvents="none";} }
-          if (minHeight > 360) { v360.disabled = true; const c = v360.parentElement.querySelector('.quality-card'); if(c){c.style.opacity="0.4";c.style.pointerEvents="none";} }
-          if (minHeight > 480) { v480.disabled = true; const c = v480.parentElement.querySelector('.quality-card'); if(c){c.style.opacity="0.4";c.style.pointerEvents="none";} }
+          if (maxHeight < 720) { v720.disabled = true; const c = v720.parentElement.querySelector('.quality-card'); if (c) { c.style.opacity = "0.4"; c.style.pointerEvents = "none"; } }
+          if (maxHeight < 480) { v480.disabled = true; const c = v480.parentElement.querySelector('.quality-card'); if (c) { c.style.opacity = "0.4"; c.style.pointerEvents = "none"; } }
+          if (minHeight > 360) { v360.disabled = true; const c = v360.parentElement.querySelector('.quality-card'); if (c) { c.style.opacity = "0.4"; c.style.pointerEvents = "none"; } }
+          if (minHeight > 480) { v480.disabled = true; const c = v480.parentElement.querySelector('.quality-card'); if (c) { c.style.opacity = "0.4"; c.style.pointerEvents = "none"; } }
 
           if (v1080 && !v1080.disabled) v1080.checked = true;
           else if (v720 && !v720.disabled) v720.checked = true;
@@ -473,6 +769,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } catch (err) {
       if (myId !== currentFetchId) return;
+      const errStr = String(err).toLowerCase();
+
+      // If error is related to cookies/dpapi and we haven't tried "none" yet
+      if (browser !== "" && (errStr.includes("cookie") || errStr.includes("dpapi"))) {
+        console.warn("[KenVano] Gagal mengambil cookie, mencoba tanpa browser...");
+        fetchVideoInfoInternal(val, "", myId);
+        return;
+      }
+
       console.error("Fetch info error:", err);
       videoCard.classList.remove("loading");
       videoTitle.textContent = "Tidak dapat membaca metadata";
@@ -562,6 +867,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (errorStr.includes("private video") || errorStr.includes("login")) {
       return "Video bersifat pribadi atau memerlukan login.";
     }
+    if (errorStr.includes("dpapi")) {
+      return "Gagal mendekripsi cookie. Mohon tutup browser (Brave/Chrome/Edge) Anda sepenuhnya lalu coba lagi.";
+    }
     if (errorStr.includes("exited with code some(1)") || errorStr.includes("exited with code 1")) {
       return "Gagal mengunduh. Silakan coba kualitas lain atau cek koneksi Anda.";
     }
@@ -580,7 +888,22 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    if (!selectedBrowser) {
+      const siteName = getSiteName(url);
+      showCookieModal(siteName, (browser) => {
+        performDownload(url, browser);
+      });
+      return;
+    }
+
+    performDownload(url, selectedBrowser);
+  });
+
+  async function performDownload(url, browser) {
+    console.log("[KenVano] Memulai download dengan browser cookie:", browser || "none");
+    if (isDownloading) return;
     isDownloading = true;
+    isConverting = false;
 
     // Determine format & quality
     let format, quality;
@@ -595,7 +918,24 @@ document.addEventListener("DOMContentLoaded", () => {
     // Show progress section, hide format section
     formatSection.classList.add("hidden");
     progressSection.classList.remove("hidden");
-    progressFooter.classList.add("hidden"); // Hide reload button initially
+    
+    // Original display logic
+    const pFooter = document.getElementById("progress-footer");
+    const pBtnReload = document.getElementById("btn-reload");
+    
+    if (pFooter) {
+      pFooter.classList.remove("hidden");
+      pFooter.style.display = "flex";
+    }
+    if (pBtnReload) {
+      pBtnReload.classList.add("hidden");
+      pBtnReload.style.display = "none";
+    }
+    // Ensure the static cancel button is visible (it might have been hidden by a previous finished download)
+    const pBtnCancelProgress = document.getElementById("btn-cancel-progress");
+    if (pBtnCancelProgress) {
+      pBtnCancelProgress.style.display = "block";
+    }
 
     progressFill.style.width = "0%";
     progressFill.classList.add("indeterminate");
@@ -605,13 +945,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const title = videoTitle.textContent || "Unknown Video";
+      console.log("[KenVano] Menjalankan download_video dengan browser:", browser || "none");
       const result = await invoke("download_video", {
         url,
         title,
         format,
         quality,
-        outputDir: selectedPath
+        outputDir: selectedPath,
+        browser: browser
       });
+
+      // Hentikan interval konversi segera setelah proses selesai
+      clearInterval(conversionInterval);
 
       // Success
       progressFill.classList.remove("indeterminate");
@@ -649,7 +994,32 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       showToast("success", "Download Selesai!", "File Anda telah berhasil disimpan.");
+      isDownloading = false;
+      
+      // Hide cancel button on success
+      const pBtnCancelProgress = document.getElementById("btn-cancel-progress");
+      if (pBtnCancelProgress) pBtnCancelProgress.style.display = "none";
+
     } catch (error) {
+      const errStr = String(error).toLowerCase();
+      
+      // If the process was canceled, don't show an error toast
+      if (errStr === "canceled") {
+        isDownloading = false;
+        return;
+      }
+
+      // Fallback: if download fails due to cookies, retry once without
+      if (browser !== "" && (errStr.includes("cookie") || errStr.includes("dpapi"))) {
+        console.warn("[KenVano] Download gagal karena cookie, mencoba ulang tanpa cookie...");
+        progressTitle.textContent = "Retrying without cookies...";
+        progressDetail.textContent = "Mengabaikan cookie dan mencoba ulang...";
+        isDownloading = false; // Reset flag to allow retry
+        isConverting = false;
+        performDownload(url, "");
+        return; // Finally will still run, but we must NOT hide the button here
+      }
+
       // Error
       const friendlyError = translateError(error);
       progressFill.classList.remove("indeterminate");
@@ -657,22 +1027,56 @@ document.addEventListener("DOMContentLoaded", () => {
       progressPercent.textContent = "";
       progressTitle.textContent = "Gagal Mengunduh";
       progressDetail.textContent = friendlyError;
-      progressFooter.classList.remove("hidden"); // Show reload button on failure
+
+      const pFooter = document.getElementById("progress-footer");
+      const pBtnReload = document.getElementById("btn-reload");
+      if (pFooter) {
+        pFooter.classList.remove("hidden");
+        pFooter.style.display = "flex";
+      }
+      if (pBtnReload) {
+        pBtnReload.classList.remove("hidden");
+        pBtnReload.style.display = "block";
+      }
 
       showToast("error", "Oops!", friendlyError);
-    } finally {
       isDownloading = false;
+
+      // Hide cancel button on final error
+      const pBtnCancelProgress = document.getElementById("btn-cancel-progress");
+      if (pBtnCancelProgress) pBtnCancelProgress.style.display = "none";
+
+    } finally {
+      // ONLY reset flags if NOT retrying (though we already returned above)
+      // Note: isDownloading was set to false at line 846 for retry
+      
       isConverting = false;
       clearInterval(conversionInterval);
       btnDownload.disabled = false;
     }
-  });
+  }
 
   // ─── Reload Metadata ────────────────────────
   btnReload.addEventListener("click", () => {
     progressSection.classList.add("hidden");
     onUrlChange(); // Trigger metadata reload
   });
+
+  if (btnCancelProgress) {
+    btnCancelProgress.addEventListener("click", async () => {
+      if (isDownloading) {
+        try {
+          await invoke("cancel_download");
+        } catch (err) {
+          console.error("Cancel progress error:", err);
+        }
+        isDownloading = false;
+        progressSection.classList.add("hidden");
+        formatSection.classList.remove("hidden");
+        showToast("info", "Download Dibatalkan", "Proses pengunduhan telah dihentikan.");
+      }
+    });
+  }
 
   // ─── Update Engine ────────────────────────
   const btnUpdateEngine = document.getElementById("btn-update-engine");
