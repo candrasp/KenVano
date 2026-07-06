@@ -25,14 +25,41 @@ async fn download_video(
     let suffix = if format == "mp3" { "_audio" } else { "_video" };
     let ext = if format == "mp3" { "mp3" } else { "mp4" };
     
+    // Detect site name from URL to create a specific subdirectory
+    let url_lower = url.to_lowercase();
+    let site_name = if url_lower.contains("youtube.com") || url_lower.contains("youtu.be") {
+        "youtube"
+    } else if url_lower.contains("tiktok.com") {
+        "tiktok"
+    } else if url_lower.contains("instagram.com") {
+        "instagram"
+    } else if url_lower.contains("facebook.com") || url_lower.contains("fb.watch") {
+        "facebook"
+    } else if url_lower.contains("x.com") || url_lower.contains("twitter.com") {
+        "twitter"
+    } else {
+        "other"
+    };
+
+    let folder_type = if format == "mp3" { "mp3" } else { "video" };
+    let sub_dir_name = format!("{} {}", site_name, folder_type);
+    let target_dir = std::path::Path::new(&output_dir).join(&sub_dir_name);
+
+    // Create the subdirectory if it doesn't exist
+    if !target_dir.exists() {
+        if let Err(e) = std::fs::create_dir_all(&target_dir) {
+            return Err(format!("Failed to create directory {:?}: {}", target_dir, e));
+        }
+    }
+    
     let mut final_filename = format!("{}{}.{}", sanitized_title, suffix, ext);
-    let mut final_path = std::path::Path::new(&output_dir).join(&final_filename);
+    let mut final_path = target_dir.join(&final_filename);
     
     let mut counter = 0;
     while final_path.exists() {
         counter += 1;
         final_filename = format!("{}{} ({}).{}", sanitized_title, suffix, counter, ext);
-        final_path = std::path::Path::new(&output_dir).join(&final_filename);
+        final_path = target_dir.join(&final_filename);
     }
 
     let mut args = vec![
